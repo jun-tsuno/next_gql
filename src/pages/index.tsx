@@ -1,6 +1,7 @@
 import styles from "@/styles/Home.module.css";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { FormEvent, useState } from "react";
+import { User } from "@/types/types";
 
 const GET_USERS = gql`
 	query GetUsers {
@@ -12,6 +13,7 @@ const GET_USERS = gql`
 	}
 `;
 
+// arguments' type: same type as schema type
 const CREATE_USER_MUTATION = gql`
 	mutation CreateUser($input: CreateUserInput!) {
 		createUser(input: $input) {
@@ -21,11 +23,13 @@ const CREATE_USER_MUTATION = gql`
 	}
 `;
 
-interface User {
-	id: string;
-	name: string;
-	email: string;
-}
+const DELETE_USER_MUTATION = gql`
+	mutation DeleteUser($id: ID!) {
+		deleteUser(id: $id) {
+			name
+		}
+	}
+`;
 
 export default function Home() {
 	const [inputName, setInputName] = useState<string>("");
@@ -33,19 +37,27 @@ export default function Home() {
 
 	const { data: allUsersData, loading, error, refetch } = useQuery(GET_USERS);
 	const [createUser] = useMutation(CREATE_USER_MUTATION);
+	const [deleteUser] = useMutation(DELETE_USER_MUTATION);
 
 	if (loading) return <h2>Loading...</h2>;
 	if (error) return <h2>Something Went Wrong!!</h2>;
 
 	const { users } = allUsersData;
 
-	const handleSubmit = (e: FormEvent) => {
+	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 		if (inputName === "" || inputEmail === "")
 			return alert("Field Are Required!");
 
-		createUser({
+		await createUser({
 			variables: { input: { name: inputName, email: inputEmail } },
+		});
+		refetch();
+	};
+
+	const handleDelete = async (id: string) => {
+		await deleteUser({
+			variables: { id },
 		});
 		refetch();
 	};
@@ -60,6 +72,9 @@ export default function Home() {
 							<div key={user.id} className={styles.Card}>
 								<p>Name: {user.name}</p>
 								<p>e-mail: {user.email}</p>
+								<button onClick={() => handleDelete(user.id)}>
+									Delete
+								</button>
 							</div>
 						);
 					})}

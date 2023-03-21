@@ -10,8 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// define db structure
+// @id: primary key
+// @unique: need to be unique email
 model User {
   id Int @id @default(autoincrement())
   email String @unique
   name String?
 }
+
+// finish setting db, migrate prisma >> npx prisma migrate dev
