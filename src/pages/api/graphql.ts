@@ -1,10 +1,15 @@
+import { PrismaClient } from "@prisma/client";
 import { ApolloServer, gql } from "apollo-server-micro";
 import { NextApiRequest, NextApiResponse } from "next";
 
-const usersData = [
-	{ id: "1", name: "John Doe", email: "Hoge@gmail.com" },
-	{ id: "2", name: "Mary Doe", email: "Mary@gmail.com" },
-];
+interface Context {
+	prisma: PrismaClient;
+}
+
+interface UserInput {
+	name: string;
+	email: string;
+}
 
 const typeDefs = gql`
 	type User {
@@ -17,16 +22,50 @@ const typeDefs = gql`
 		hello: String
 		users: [User]
 	}
+
+	input CreateUserInput {
+		name: String!
+		email: String!
+	}
+
+	type Mutation {
+		createUser(input: CreateUserInput!): User!
+	}
 `;
 
 const resolvers = {
 	Query: {
 		hello: () => "Hello World",
-		users: () => usersData,
+		// get all user from db
+		users: async (parent: undefined, args: {}, context: Context) => {
+			return await context.prisma.user.findMany();
+		},
+	},
+	Mutation: {
+		createUser: async (
+			parent: undefined,
+			args: { input: UserInput },
+			context: Context
+		) => {
+			const { name, email } = args.input;
+			const newUser = await context.prisma.user.create({
+				data: {
+					name,
+					email,
+				},
+			});
+			return newUser;
+		},
 	},
 };
 
-const apolloServer = new ApolloServer({ typeDefs, resolvers });
+const prisma = new PrismaClient();
+
+const apolloServer = new ApolloServer({
+	typeDefs,
+	resolvers,
+	context: { prisma },
+});
 
 const startServer = apolloServer.start();
 

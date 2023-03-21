@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.7.10",
     "@prisma/client": "^4.11.0",
     "@types/node": "18.15.5",
     "@types/react": "18.0.28",
